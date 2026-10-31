@@ -746,7 +746,9 @@ Games.registry.escucha = {
     $('#esc-form').addEventListener('submit', (e) => {
       e.preventDefault();
       if (this.locked) return;
-      const val = normAnswer($('#esc-input').value);
+      // Se acepta la respuesta en letras o directamente en morse (ej: «....» = H).
+      const raw = $('#esc-input').value;
+      const val = normAnswer(looksLikeMorse(raw) ? itemsToText(morseToItems(raw).items) : raw);
       if (!val) return;
       if (val === normAnswer(this.target)) this.reveal(true);
       else this.reveal(false, 'No era eso.');
