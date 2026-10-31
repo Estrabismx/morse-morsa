@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morse Morsa</title>
+  <meta name="description" content="Traductor de código morse a español latino y viceversa, con reproducción en luz y sonido, juegos de estudio y claves de sustitución.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="flash-overlay" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="lamp lamp-sm" aria-hidden="true"></span>
+      <h1>Morse <span>Morsa</span></h1>
+      <p class="tagline">-- --- .-. ... . &nbsp;·&nbsp; estación telegráfica</p>
+    </div>
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab active" data-tab="traductor">Traductor</button>
+      <button class="tab" data-tab="alfabeto">Alfabeto</button>
+      <button class="tab" data-tab="juegos">Juegos</button>
+      <button class="tab" data-tab="claves">Claves</button>
+    </nav>
+  </header>
+
+  <!-- Panel global de reproducción -->
+  <section class="console" aria-label="Ajustes de reproducción">
+    <div class="console-group">
+      <span class="console-title">Reproducir con</span>
+      <label class="switch"><input type="checkbox" id="opt-luz" checked><span>💡 Luz</span></label>
+      <label class="switch"><input type="checkbox" id="opt-sonido" checked><span>🔊 Sonido</span></label>
+      <label class="switch small"><input type="checkbox" id="opt-full"><span>Destello a pantalla completa</span></label>
+    </div>
+    <div class="console-group sliders">
+      <label>Velocidad <output id="out-wpm">12</output> PPM
+        <input type="range" id="opt-wpm" min="5" max="30" value="12">
+      </label>
+      <label>Tono <output id="out-freq">600</output> Hz
+        <input type="range" id="opt-freq" min="300" max="1000" step="10" value="600">
+      </label>
+      <label>Volumen <output id="out-vol">60</output>%
+        <input type="range" id="opt-vol" min="0" max="100" value="60">
+      </label>
+    </div>
+    <p class="console-warning" id="console-warning" hidden>Activa luz y/o sonido para reproducir.</p>
+  </section>
+
+  <main>
+    <!-- ============ TRADUCTOR ============ -->
+    <section id="traductor" class="view active">
+      <div class="panel">
+        <div class="direction-bar">
+          <span id="lbl-from" class="dir-label">Español</span>
+          <button id="btn-swap" class="btn btn-icon" title="Invertir dirección" aria-label="Invertir dirección">⇄</button>
+          <span id="lbl-to" class="dir-label">Morse</span>
+        </div>
+
+        <div class="translator-grid">
+          <div class="field">
+            <label for="tr-input" id="tr-input-label">Texto en español</label>
+            <textarea id="tr-input" class="paper" rows="6" placeholder="Escribe tu mensaje… ej: Hola, ¿cómo estás?"></textarea>
+            <div class="morse-pad" id="morse-pad" hidden>
+              <button class="btn btn-key" data-ins=".">·</button>
+              <button class="btn btn-key" data-ins="-">—</button>
+              <button class="btn btn-key" data-ins=" ">espacio letra</button>
+              <button class="btn btn-key" data-ins=" / ">/ palabra</button>
+              <button class="btn btn-key" data-ins="back">⌫</button>
+            </div>
+            <label class="switch small" id="ch-option"><input type="checkbox" id="opt-ch"><span>Tratar «CH» como una letra (----)</span></label>
+          </div>
+          <div class="field">
+            <label for="tr-output" id="tr-output-label">Código morse</label>
+            <textarea id="tr-output" class="paper" rows="6" readonly></textarea>
+            <p class="hint" id="tr-hint">Letras separadas por espacio y palabras por « / ».</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="btn-play" class="btn btn-primary">▶ Reproducir</button>
+          <button id="btn-stop" class="btn">■ Detener</button>
+          <button id="btn-copy" class="btn">Copiar resultado</button>
+          <button id="btn-clear" class="btn">Limpiar</button>
+        </div>
+
+        <div class="dictado">
+          <button class="tg-key key-sm" id="tr-key" aria-label="Manipulador para dictar morse"><span>DICTAR</span></button>
+          <div class="dictado-info">
+            <strong>Dictar con manipulador</strong>
+            <p class="hint">Mantén presionado el botón: pulsación corta = punto, larga = raya. Haz una pausa para cerrar la letra y una pausa más larga para separar palabras. Lo que dictes se escribe y se traduce solo.</p>
+            <label>Ritmo <output id="tr-wpm-out">8</output> PPM
+              <input type="range" id="tr-wpm" min="4" max="20" value="8">
+            </label>
+          </div>
+        </div>
+
+        <div class="playback">
+          <span class="lamp lamp-lg lamp-touch" id="tr-lamp" aria-hidden="true"></span>
+          <div class="ticker" id="ticker" aria-live="polite"></div>
+        </div>
+        <p class="secret-msg" id="secret-msg" aria-live="polite" hidden></p>
+      </div>
+    </section>
+
+    <!-- ============ ALFABETO ============ -->
+    <section id="alfabeto" class="view">
+      <div class="panel">
+        <h2>Alfabeto morse en español</h2>
+        <p class="hint">Toca una tarjeta para escucharla o verla destellar. Punto = 1 tiempo, raya = 3 tiempos, separación entre letras = 3 tiempos y entre palabras = 7.</p>
+        <h3>Letras</h3>
+        <div class="alpha-grid" id="grid-letras"></div>
+        <h3>Números</h3>
+        <div class="alpha-grid" id="grid-numeros"></div>
+        <h3>Signos y letras especiales</h3>
+        <div class="alpha-grid" id="grid-signos"></div>
+      </div>
+    </section>
+
+    <!-- ============ JUEGOS ============ -->
+    <section id="juegos" class="view">
+      <div class="panel" id="games-menu">
+        <h2>Sala de entrenamiento</h2>
+        <p class="hint">Elige una actividad. Tus mejores puntajes se guardan en este navegador.</p>
+        <div class="game-cards">
+          <button class="game-card" data-game="quiz"><span class="gc-icon">❓</span><strong>Quiz</strong><small>Opción múltiple con rachas</small><em class="gc-best" data-best="quiz"></em></button>
+          <button class="game-card" data-game="escucha"><span class="gc-icon">🎧</span><strong>Escucha y escribe</strong><small>Descifra lo que suena o destella</small><em class="gc-best" data-best="escucha"></em></button>
+          <button class="game-card" data-game="telegrafista"><span class="gc-icon">📟</span><strong>Telegrafista</strong><small>Teclea morse con el manipulador</small><em class="gc-best" data-best="telegrafista"></em></button>
+          <button class="game-card" data-game="contrarreloj"><span class="gc-icon">⏱️</span><strong>Contrarreloj</strong><small>60 segundos a toda máquina</small><em class="gc-best" data-best="contrarreloj"></em></button>
+          <button class="game-card" data-game="memoria"><span class="gc-icon">🃏</span><strong>Memoria</strong><small>Une letras con su código</small><em class="gc-best" data-best="memoria"></em></button>
+          <button class="game-card" data-game="torneo"><span class="gc-icon">🏆</span><strong>Torneo</strong><small>Varios jugadores, gana el último en pie</small></button>
+        </div>
+      </div>
+
+      <!-- Quiz -->
+      <div class="panel game" id="game-quiz" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Quiz</h2></div>
+        <div class="game-setup" data-stage="setup">
+          <label>Tipo de pregunta
+            <select id="quiz-dir">
+              <option value="mix">Mixto</option>
+              <option value="m2l">Morse → letra</option>
+              <option value="l2m">Letra → morse</option>
+            </select>
+          </label>
+          <label>Contenido
+            <select id="quiz-pool">
+              <option value="letras">Letras</option>
+              <option value="numeros">Números</option>
+              <option value="signos">Signos</option>
+              <option value="todo">Todo</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" id="quiz-start">Comenzar (10 preguntas)</button>
+        </div>
+        <div class="game-play" data-stage="play" hidden>
+          <div class="scorebar"><span>Pregunta <b id="quiz-n">1</b>/10</span><span>Puntos <b id="quiz-score">0</b></span><span>Racha <b id="quiz-streak">0</b> 🔥</span></div>
+          <div class="question">
+            <span class="lamp" aria-hidden="true"></span>
+            <div class="q-prompt" id="quiz-prompt"></div>
+            <button class="btn btn-small" id="quiz-listen">▶ Reproducir</button>
+          </div>
+          <div class="options" id="quiz-options"></div>
+          <p class="feedback" id="quiz-feedback" aria-live="polite"></p>
+        </div>
+        <div class="game-end" data-stage="end" hidden></div>
+      </div>
+
+      <!-- Escucha y escribe -->
+      <div class="panel game" id="game-escucha" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Escucha y escribe</h2></div>
+        <div class="game-setup" data-stage="setup">
+          <label>Nivel
+            <select id="esc-level">
+              <option value="letras">Letras sueltas</option>
+              <option value="palabras">Palabras cortas</option>
+              <option value="frases">Frases</option>
+            </select>
+          </label>
+          <p class="hint">Se usa la luz y/o el sonido que tengas activados arriba.</p>
+          <button class="btn btn-primary" id="esc-start">Comenzar (10 rondas)</button>
+        </div>
+        <div class="game-play" data-stage="play" hidden>
+          <div class="scorebar"><span>Ronda <b id="esc-n">1</b>/10</span><span>Puntos <b id="esc-score">0</b></span></div>
+          <div class="question">
+            <span class="lamp lamp-lg" aria-hidden="true"></span>
+            <div class="q-prompt small" id="esc-hintcode">¿Qué dice el mensaje?</div>
+          </div>
+          <form class="answer-row" id="esc-form">
+            <input type="text" id="esc-input" class="paper" autocomplete="off" placeholder="Escribe lo que entendiste">
+            <button class="btn btn-primary" type="submit">Comprobar</button>
+          </form>
+          <div class="actions">
+            <button class="btn" id="esc-repeat">↻ Repetir</button>
+            <button class="btn" id="esc-hint">Pista (−5)</button>
+            <button class="btn" id="esc-skip">Saltar</button>
+          </div>
+          <p class="feedback" id="esc-feedback" aria-live="polite"></p>
+        </div>
+        <div class="game-end" data-stage="end" hidden></div>
+      </div>
+
+      <!-- Telegrafista -->
+      <div class="panel game" id="game-telegrafista" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Telegrafista</h2></div>
+        <div class="tg-controls">
+          <label>Modo
+            <select id="tg-mode">
+              <option value="libre">Libre</option>
+              <option value="reto">Reto de palabras</option>
+            </select>
+          </label>
+          <label>Ritmo del manipulador <output id="tg-wpm-out">8</output> PPM
+            <input type="range" id="tg-wpm" min="4" max="20" value="8">
+          </label>
+        </div>
+        <p class="hint">Mantén presionado el manipulador (o la <kbd>barra espaciadora</kbd>): pulsación corta = punto, larga = raya. Haz una pausa para cerrar la letra y una pausa más larga para separar palabras.</p>
+        <div class="tg-target" id="tg-target" hidden>Transmite: <b id="tg-word"></b> <span class="tg-progress">Logradas: <b id="tg-done">0</b></span></div>
+        <div class="tg-board">
+          <span class="lamp lamp-lg" aria-hidden="true"></span>
+          <div class="tg-display">
+            <div class="tg-current" id="tg-current" aria-live="polite">&nbsp;</div>
+            <div class="tg-text paper" id="tg-text"></div>
+          </div>
+        </div>
+        <button class="tg-key" id="tg-key" aria-label="Manipulador telegráfico"><span>MANIPULADOR</span></button>
+        <div class="actions">
+          <button class="btn" id="tg-space">Espacio</button>
+          <button class="btn" id="tg-back">⌫ Borrar letra</button>
+          <button class="btn" id="tg-clear">Limpiar</button>
+          <button class="btn" id="tg-skip" hidden>Otra palabra</button>
+        </div>
+      </div>
+
+      <!-- Contrarreloj -->
+      <div class="panel game" id="game-contrarreloj" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Contrarreloj</h2></div>
+        <div class="game-setup" data-stage="setup">
+          <label>Modo
+            <select id="cr-mode">
+              <option value="m2l">Ves morse → escribes la letra</option>
+              <option value="l2m">Ves la letra → escribes el morse</option>
+            </select>
+          </label>
+          <p class="hint">En modo «letra → morse» usa <kbd>.</kbd> y <kbd>-</kbd> y presiona <kbd>Enter</kbd>.</p>
+          <button class="btn btn-primary" id="cr-start">¡Partir! (60 s)</button>
+        </div>
+        <div class="game-play" data-stage="play" hidden>
+          <div class="scorebar"><span>Tiempo <b id="cr-time">60</b> s</span><span>Aciertos <b id="cr-score">0</b></span><span>Errores <b id="cr-errors">0</b></span></div>
+          <div class="timer-bar"><div id="cr-bar"></div></div>
+          <div class="question"><div class="q-prompt big" id="cr-prompt"></div></div>
+          <form class="answer-row" id="cr-form">
+            <input type="text" id="cr-input" class="paper" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button class="btn btn-primary" type="submit">OK</button>
+          </form>
+          <div class="morse-pad" id="cr-pad" hidden>
+            <button class="btn btn-key" type="button" data-ins=".">·</button>
+            <button class="btn btn-key" type="button" data-ins="-">—</button>
+            <button class="btn btn-key" type="button" data-ins="back">⌫</button>
+          </div>
+        </div>
+        <div class="game-end" data-stage="end" hidden></div>
+      </div>
+
+      <!-- Memoria -->
+      <div class="panel game" id="game-memoria" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Memoria</h2></div>
+        <div class="game-setup" data-stage="setup">
+          <label>Parejas
+            <select id="mem-pairs">
+              <option value="6">6 parejas</option>
+              <option value="8" selected>8 parejas</option>
+              <option value="10">10 parejas</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" id="mem-start">Repartir cartas</button>
+        </div>
+        <div class="game-play" data-stage="play" hidden>
+          <div class="scorebar"><span>Movimientos <b id="mem-moves">0</b></span><span>Parejas <b id="mem-found">0</b></span><span>Tiempo <b id="mem-time">0</b> s</span></div>
+          <div class="mem-grid" id="mem-grid"></div>
+        </div>
+        <div class="game-end" data-stage="end" hidden></div>
+      </div>
+
+      <!-- Torneo -->
+      <div class="panel game" id="game-torneo" hidden>
+        <div class="game-head"><button class="btn btn-back">← Volver</button><h2>Torneo</h2></div>
+        <div class="game-setup" data-stage="setup">
+          <div class="setup-grid">
+            <label>Jugadores
+              <select id="tor-count">
+                <option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
+              </select>
+            </label>
+            <label>Segundos por turno
+              <select id="tor-time">
+                <option>5</option><option>10</option><option selected>15</option><option>20</option><option>30</option>
+              </select>
+            </label>
+            <label>Vidas por jugador
+              <select id="tor-lives">
+                <option selected>1</option><option>2</option><option>3</option>
+              </select>
+            </label>
+          </div>
+          <fieldset class="tor-types">
+            <legend>Tipos de pregunta</legend>
+            <label class="switch small"><input type="checkbox" value="m2l" checked><span>Morse → letra</span></label>
+            <label class="switch small"><input type="checkbox" value="l2m" checked><span>Letra → morse</span></label>
+            <label class="switch small"><input type="checkbox" value="listen" checked><span>Escuchar / ver destello</span></label>
+          </fieldset>
+          <div class="tor-names" id="tor-names"></div>
+          <p class="hint">Cada jugador responde en su turno. Si falla o se acaba el tiempo pierde una vida; sin vidas, queda eliminado. La dificultad sube en cada ronda. ¡Gana el último en pie!</p>
+          <button class="btn btn-primary" id="tor-start">Iniciar torneo</button>
+        </div>
+        <div class="game-play" data-stage="play" hidden>
+          <div class="tor-players" id="tor-players"></div>
+          <div class="tor-ready" id="tor-ready">
+            <p>Ronda <b id="tor-round">1</b></p>
+            <h3>Turno de <span id="tor-turn-name"></span></h3>
+            <button class="btn btn-primary" id="tor-go">¡Estoy listo/a!</button>
+          </div>
+          <div class="tor-question" id="tor-question" hidden>
+            <div class="timer-bar"><div id="tor-bar"></div></div>
+            <div class="question">
+              <span class="lamp" aria-hidden="true"></span>
+              <div class="q-prompt" id="tor-prompt"></div>
+            </div>
+            <div class="options" id="tor-options"></div>
+            <p class="feedback" id="tor-feedback" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="game-end" data-stage="end" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============ CLAVES ============ -->
+    <section id="claves" class="view">
+      <div class="panel">
+        <h2>Claves de sustitución</h2>
+        <p class="hint">Claves usadas tradicionalmente en scoutismo y juegos de mensajes secretos. Las tildes se quitan antes de cifrar (la Ñ se conserva).</p>
+        <div class="claves-layout">
+          <div class="claves-list" id="claves-list" role="tablist"></div>
+          <div class="clave-detail" id="clave-detail">
+            <h3 id="clave-name"></h3>
+            <p id="clave-desc"></p>
+            <div class="clave-key" id="clave-key"></div>
+            <div id="clave-tools">
+              <div class="field">
+                <label for="clave-input">Mensaje</label>
+                <textarea id="clave-input" class="paper" rows="3" placeholder="Escribe el mensaje a cifrar o descifrar"></textarea>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary" id="clave-enc">Cifrar</button>
+                <button class="btn" id="clave-dec">Descifrar</button>
+                <button class="btn" id="clave-copy">Copiar</button>
+              </div>
+              <div class="field">
+                <label>Resultado</label>
+                <div class="clave-output paper" id="clave-output"></div>
+              </div>
+              <div id="clave-keypad-wrap" hidden>
+                <p class="hint">Para descifrar, toca los símbolos en orden:</p>
+                <div class="clave-keypad" id="clave-keypad"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Morse Morsa · <span class="mono">.-.. .. ... - --- ...</span> · Hecho para aprender jugando</p>
+  </footer>
+
+  <!-- Sobre de contacto (esquina inferior izquierda) -->
+  <div class="mailbox">
+    <div class="mailbox-panel" id="mailbox-panel" hidden>
+      <p class="mailbox-title">Telegrama de contacto</p>
+      <a href="https://github.com/Estrabismx/morse-morsa" target="_blank" rel="noopener noreferrer">📦 Repositorio del proyecto</a>
+      <a href="https://github.com/Estrabismx" target="_blank" rel="noopener noreferrer">🐙 GitHub · Estrabismx</a>
+      <a href="https://www.instagram.com/n.arkotikk/" target="_blank" rel="noopener noreferrer">📷 Instagram · n.arkotikk</a>
+    </div>
+    <button class="mailbox-btn" id="mailbox-btn" aria-expanded="false" aria-controls="mailbox-panel" aria-label="Enlaces de contacto">
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 6.5l9 6.5 9-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
